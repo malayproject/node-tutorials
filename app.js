@@ -1,18 +1,53 @@
-const HTTP = require('http');
+const {createReadStream} = require('fs');
+const path = require('path');
+const http = require('http');
 
-const server = HTTP.createServer((req, res) => {
-    if(req.url === '/') {
-        res.write(`<p>I got a request, here is my response.</p>`);
-    }else if(req.url === '/about')  {
-        res.write('This is our history.')
-    }else{
-        res.write(`
-        <h1>Oops! seems like we can't find the resource you are looking for</h1>
-        <p>To go back to the homepage click</p>
-        <a href='/'>Home</a>
-        `)
+console.log(__dirname)
+
+
+
+const server = http.createServer((req, res) => {
+    if(req.url === '/text') {
+        const fileStream = createReadStream(path.join(__dirname, 'testFolder', 'content', 'bigFile.txt'), {highWaterMark: 300000})
+        fileStream.pipe(res);
+        fileStream.on('error', err => {
+            res.end(err);
+        })
+    }else if(req.url === '/api/user')   {
+        let userData = {
+            name: {
+                fName: 'First',
+                lName: 'Last'
+            },
+            occupation: 'software engineer',
+            age: 29,
+            additionalDetails: {
+                relativeNames: ['abc', 'def', 'ghi', 'jkl']
+            } 
+        };
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify(userData));
+    }else if(req.url === '/contact'){
+        const htmlStream = createReadStream(path.join(__dirname, 'testFolder', 'content', 'contact.html'))
+        res.writeHead(200, {'Content-Type': 'text/html'});
+        htmlStream.pipe(res);
+        htmlStream.on('error', err => {
+            res.end(err);
+        })
+    }else if(req.url === '/' || req.url === '/home')   {
+        const htmlStream = createReadStream(path.join(__dirname, 'testFolder', 'content', 'index.html'))
+        res.writeHead(200, {'Content-Type': 'text/html'});
+        htmlStream.pipe(res)
+        htmlStream.on('error', err => {
+            res.end(err);
+        });
     }
-    res.end();
-});
+    else{
+        res.end(`page doesn't exist`);
+    }
+})
 
-server.listen(5011);
+server.listen(5000);
+
+
+
